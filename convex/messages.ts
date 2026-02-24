@@ -14,10 +14,10 @@ export const sendMessage = mutation({
       conversationId: args.conversationId,
       senderId: args.senderId,
       content: args.content,
-      replyTo: args.replyTo ?? null,
+      replyTo: args.replyTo,
       timestamp: Date.now(),
       isDeleted: false,
-      reactions: {}, // emoji: [userIds]
+      reactions: [], // array of { emoji, userIds }
     })
 
     const conv = await ctx.db.get(args.conversationId)
@@ -71,12 +71,12 @@ export const getMessages = query({
 
 // --------------------- Delete Message ---------------------
 export const deleteMessage = mutation({
-  args: { messageId: v.id("messages") },
+  args: { messageId: v.id("messages"), userId: v.id("users") },
   handler: async (ctx, args) => {
     const msg = await ctx.db.get(args.messageId)
     if (!msg) return
 
-    if (msg.senderId === ctx.auth.userId) {
+    if (msg.senderId === args.userId) {
       await ctx.db.patch(args.messageId, { isDeleted: true })
     }
 
@@ -86,12 +86,12 @@ export const deleteMessage = mutation({
 
 // --------------------- Update Message ---------------------
 export const updateMessage = mutation({
-  args: { messageId: v.id("messages"), content: v.string() },
+  args: { messageId: v.id("messages"), content: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {
     const message = await ctx.db.get(args.messageId)
 
-    if (message && message.senderId === ctx.auth.userId) {
-      await ctx.db.patch(args.messageId, { content: args.content })
+    if (message && message.senderId === args.userId) {
+      await ctx.db.patch(args.messageId, { content: args.content, editedAt: Date.now() })
     }
   },
 })
@@ -101,23 +101,32 @@ export const addReaction = mutation({
   args: {
     messageId: v.id("messages"),
     emoji: v.string(),
+    userId: v.id("users"),
   },
-  handler: async (ctx, { messageId, emoji }) => {
+  handler: async (ctx, { messageId, emoji, userId }) => {
     const message = await ctx.db.get(messageId)
     if (!message) return
 
-    const userId = ctx.auth.userId
-    if (!userId) return
+    const reactions = message.reactions || []
 
-    const reactions = message.reactions || {}
+    // Find existing reaction for this emoji
+    const reactionIndex = reactions.findIndex((r) => r.emoji === emoji)
 
-    if (!reactions[emoji]) reactions[emoji] = []
-
-    // ✅ Toggle reaction
-    if (reactions[emoji].includes(userId)) {
-      reactions[emoji] = reactions[emoji].filter((id: string) => id !== userId)
+    if (reactionIndex !== -1) {
+      // Toggle: remove if user already reacted
+      if (reactions[reactionIndex].userIds.includes(userId)) {
+        reactions[reactionIndex].userIds = reactions[reactionIndex].userIds.filter((id) => id !== userId)
+        // Remove emoji reaction if no more users reacted
+        if (reactions[reactionIndex].userIds.length === 0) {
+          reactions.splice(reactionIndex, 1)
+        }
+      } else {
+        // Add user to existing reaction
+        reactions[reactionIndex].userIds.push(userId)
+      }
     } else {
-      reactions[emoji].push(userId)
+      // Create new reaction
+      reactions.push({ emoji, userIds: [userId] })
     }
 
     await ctx.db.patch(messageId, { reactions })

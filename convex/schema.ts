@@ -24,6 +24,9 @@ export default defineSchema({
     content: v.string(),
     timestamp: v.number(),
     isDeleted: v.boolean(),
+    reactions: v.optional(v.any()), // Accepts both old {} and new [] formats
+    editedAt: v.optional(v.number()), // Track when message was edited
+    replyTo: v.optional(v.id('messages')), // Reply to another message
   }).index('by_conversation', ['conversationId']),
   typingIndicators: defineTable({
     conversationId: v.id('conversations'),

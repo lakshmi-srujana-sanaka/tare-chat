@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { api } from '../../convex/_generated/api'
 import Image from 'next/image'
 import { Search, Users, MessageCircle } from 'lucide-react'
+import { useTheme } from './ChatApp'
 
 interface SidebarProps {
   currentUserId: string
@@ -12,6 +13,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
+  const { isDark } = useTheme()
   const users = useQuery(api.users.getUsers)
   const conversations = useQuery(api.conversations.getConversations, { userId: currentUserId as any })
   const createConversation = useMutation(api.conversations.createConversation)
@@ -55,13 +57,15 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
   }
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+    <div className={`w-80 border-r flex flex-col ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className={`p-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="flex space-x-1 mb-4">
           <button
             onClick={() => setActiveTab('users')}
             className={`flex-1 flex items-center justify-center p-2 rounded-md text-sm font-medium ${
-              activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'users' 
+                ? isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'
+                : `${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`
             }`}
           >
             <Users className="w-4 h-4 mr-2" />
@@ -70,7 +74,9 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
           <button
             onClick={() => setActiveTab('conversations')}
             className={`flex-1 flex items-center justify-center p-2 rounded-md text-sm font-medium ${
-              activeTab === 'conversations' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'conversations' 
+                ? isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'
+                : `${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`
             }`}
           >
             <MessageCircle className="w-4 h-4 mr-2" />
@@ -79,13 +85,13 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
         </div>
         {activeTab === 'users' && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
             <input
               type="text"
               placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
             />
           </div>
         )}
@@ -104,7 +110,7 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
               placeholder="Group name"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md mb-2"
+              className={`w-full p-2 border rounded-md mb-2 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
             />
             <button
               onClick={handleCreateGroup}
@@ -115,21 +121,21 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
             </button>
             <button
               onClick={() => { setCreatingGroup(false); setSelectedUsers([]); setGroupName(''); }}
-              className="w-full mt-1 p-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              className={`w-full mt-1 p-2 text-white rounded-md ${isDark ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-500 hover:bg-gray-600'}`}
             >
               Cancel
             </button>
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-gray-900' : ''}`}>
         {activeTab === 'users' ? (
           <>
             {filteredUsers?.length ? (
               filteredUsers.map(u => (
                 <div
                   key={u._id}
-                  className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer flex items-center"
+                  className={`p-3 border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'} cursor-pointer flex items-center`}
                   onClick={() => handleUserClick(u._id)}
                 >
                   {creatingGroup && (
@@ -153,14 +159,14 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
                     )}
                   </div>
                   <div className="ml-3">
-                    <p className="font-medium">{u.name}</p>
-                    <p className="text-sm text-gray-500">{u.isOnline ? 'Online' : 'Offline'}</p>
+                    <p className={`font-medium ${isDark ? 'text-gray-100' : ''}`}>{u.name}</p>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{u.isOnline ? 'Online' : 'Offline'}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <div className={`p-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <Users className={`w-12 h-12 mx-auto mb-2 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
                 No users found
               </div>
             )}
@@ -171,17 +177,17 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
               conversations.map(c => (
                 <div
                   key={c._id}
-                  className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer flex items-center"
+                  className={`p-3 border-b ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'} cursor-pointer flex items-center`}
                   onClick={() => onSelectConversation(c._id)}
                 >
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${isDark ? 'bg-blue-900' : 'bg-blue-100'}`}>
+                    <MessageCircle className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
                   <div className="flex-1">
                     {c.isGroup ? (
                       <>
-                        <p className="font-medium">{c.name || 'Group Chat'}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className={`font-medium ${isDark ? 'text-gray-100' : ''}`}>{c.name || 'Group Chat'}</p>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           {c.participants.length} members
                         </p>
                       </>
@@ -191,8 +197,8 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
                         const otherUser = users?.find(u => u._id === otherUserId)
                         return (
                           <>
-                            <p className="font-medium">{otherUser?.name || 'Unknown User'}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className={`font-medium ${isDark ? 'text-gray-100' : ''}`}>{otherUser?.name || 'Unknown User'}</p>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               {c.lastMessageContent ? c.lastMessageContent.substring(0, 30) + (c.lastMessageContent.length > 30 ? '...' : '') : 'No messages yet'}
                             </p>
                           </>
@@ -208,8 +214,8 @@ export function Sidebar({ currentUserId, onSelectConversation }: SidebarProps) {
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-gray-500">
-                <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <div className={`p-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <MessageCircle className={`w-12 h-12 mx-auto mb-2 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
                 No conversations yet
               </div>
             )}
